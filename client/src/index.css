@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base colors */
+    --background: 0 0% 95%; /* #F2F2F7 */
+    --foreground: 240 3% 12%; /* #1C1C1E */
+    
+    /* Card colors */
+    --card: 0 0% 100%; /* white */
+    --card-foreground: 240 3% 12%; /* #1C1C1E */
+    
+    /* Primary colors (green) */
+    --primary: 142 68% 49%; /* #34C759 */
+    --primary-foreground: 0 0% 100%; /* white */
+    
+    /* Secondary colors (blue) */
+    --secondary: 211 100% 50%; /* #007AFF */
+    --secondary-foreground: 0 0% 100%; /* white */
+    
+    /* Muted colors */
+    --muted: 0 0% 95%; /* #F2F2F7 */
+    --muted-foreground: 240 5% 57%; /* #8E8E93 */
+    
+    /* Accent colors */
+    --accent: 211 100% 50%; /* #007AFF */
+    --accent-foreground: 0 0% 100%; /* white */
+    
+    /* Status colors */
+    --destructive: 357 100% 59%; /* #FF3B30 */
+    --destructive-foreground: 0 0% 100%; /* white */
+    
+    /* Chart colors */
+    --chart-1: 142 68% 49%; /* #34C759 */
+    --chart-2: 211 100% 50%; /* #007AFF */
+    --chart-3: 357 100% 59%; /* #FF3B30 */
+    --chart-4: 48 100% 50%; /* #FFCC00 */
+    --chart-5: 240 5% 57%; /* #8E8E93 */
+    
+    /* Border and input styles */
+    --border: 240 5% 87%; /* #DEDEE0 */
+    --input: 240 5% 87%; /* #DEDEE0 */
+    --ring: 211 100% 50%; /* #007AFF */
+    
+    /* Border radius */
+    --radius: 0.5rem;
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Status bar */
+.status-bar {
+  height: 44px;
+}
+
+/* Tab bar */
+.tab-bar {
+  height: 83px; /* Includes safe area on iPhone */
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+/* Screen content */
+.screen-content {
+  height: calc(100vh - 127px);
+  overflow-y: auto;
+}
+
+/* Camera button */
+.capture-button {
+  position: relative;
+}
+.capture-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 3px solid white;
+}
