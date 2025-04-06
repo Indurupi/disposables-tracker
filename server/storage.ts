@@ -8,6 +8,8 @@ import {
   type DisposableItemStats,
   disposableItemCategories
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, count, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -28,129 +30,142 @@ export interface IStorage {
   getDisposableItemStats(userId: number): Promise<DisposableItemStats>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private disposableItems: Map<number, DisposableItem>;
-  private currentUserId: number;
-  private currentItemId: number;
-  
+export class DatabaseStorage implements IStorage {
   constructor() {
-    this.users = new Map();
-    this.disposableItems = new Map();
-    this.currentUserId = 1;
-    this.currentItemId = 1;
-    
-    // Add default user for testing
-    this.createUser({
-      username: "testuser",
-      password: "password"
-    });
-    
-    // Add some sample items
-    const sampleItems = [
-      { name: "Plastic Cup", category: "Drink", imageUrl: "", userId: 1 },
-      { name: "Plastic Bag", category: "Shopping", imageUrl: "", userId: 1 },
-      { name: "Plastic Straw", category: "Drink", imageUrl: "", userId: 1 },
-      { name: "Food Container", category: "Food", imageUrl: "", userId: 1 }
-    ];
-    
-    sampleItems.forEach(item => this.createDisposableItem(item));
+    // Initialize DB connection
   }
   
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
   
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
   
   // Disposable item operations
   async getDisposableItems(userId: number): Promise<DisposableItem[]> {
-    return Array.from(this.disposableItems.values()).filter(
-      (item) => item.userId === userId
-    );
+    return db.select().from(disposableItems).where(eq(disposableItems.userId, userId));
   }
   
   async getDisposableItemsByCategory(userId: number, category: string): Promise<DisposableItem[]> {
-    return Array.from(this.disposableItems.values()).filter(
-      (item) => item.userId === userId && item.category === category
+    return db.select().from(disposableItems).where(
+      and(
+        eq(disposableItems.userId, userId),
+        eq(disposableItems.category, category)
+      )
     );
   }
   
   async getRecentDisposableItems(userId: number, limit: number): Promise<DisposableItem[]> {
-    return Array.from(this.disposableItems.values())
-      .filter((item) => item.userId === userId)
-      .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
-      .slice(0, limit);
+    return db.select().from(disposableItems)
+      .where(eq(disposableItems.userId, userId))
+      .orderBy(desc(disposableItems.dateAdded))
+      .limit(limit);
   }
   
   async getDisposableItem(id: number): Promise<DisposableItem | undefined> {
-    return this.disposableItems.get(id);
+    const [item] = await db.select().from(disposableItems).where(eq(disposableItems.id, id));
+    return item;
   }
   
   async createDisposableItem(insertItem: InsertDisposableItem): Promise<DisposableItem> {
-    const id = this.currentItemId++;
-    const item: DisposableItem = { 
-      ...insertItem, 
-      id, 
-      dateAdded: new Date() 
-    };
-    this.disposableItems.set(id, item);
+    const [item] = await db.insert(disposableItems).values(insertItem).returning();
     return item;
   }
   
   async updateDisposableItem(id: number, updatedFields: Partial<InsertDisposableItem>): Promise<DisposableItem | undefined> {
-    const existingItem = this.disposableItems.get(id);
-    if (!existingItem) return undefined;
-    
-    const updatedItem = { ...existingItem, ...updatedFields };
-    this.disposableItems.set(id, updatedItem);
+    const [updatedItem] = await db.update(disposableItems)
+      .set(updatedFields)
+      .where(eq(disposableItems.id, id))
+      .returning();
     return updatedItem;
   }
   
   async deleteDisposableItem(id: number): Promise<boolean> {
-    return this.disposableItems.delete(id);
+    const result = await db.delete(disposableItems)
+      .where(eq(disposableItems.id, id))
+      .returning({ id: disposableItems.id });
+    return result.length > 0;
   }
   
   // Stats operations
   async getDisposableItemStats(userId: number): Promise<DisposableItemStats> {
-    const items = await this.getDisposableItems(userId);
-    const now = new Date();
+    // Get all-time total
+    const [allTimeResult] = await db.select({ 
+      count: count() 
+    }).from(disposableItems).where(eq(disposableItems.userId, userId));
     
-    // Get items from the last week
-    const weekAgo = new Date(now);
+    const allTimeTotal = Number(allTimeResult?.count || 0);
+    
+    // Get weekly total (last 7 days)
+    const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const weeklyItems = items.filter(item => new Date(item.dateAdded) >= weekAgo);
     
-    // Get items from the last month
-    const monthAgo = new Date(now);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-    const monthlyItems = items.filter(item => new Date(item.dateAdded) >= monthAgo);
+    const [weeklyResult] = await db.select({ 
+      count: count() 
+    }).from(disposableItems).where(
+      and(
+        eq(disposableItems.userId, userId),
+        sql`${disposableItems.dateAdded} >= ${weekAgo}`
+      )
+    );
     
-    // Initialize the stats by category
-    const byCategory: Partial<Record<string, number>> = {};
+    const weeklyTotal = Number(weeklyResult?.count || 0);
+    
+    // Get monthly total (last 30 days)
+    const monthAgo = new Date();
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    
+    const [monthlyResult] = await db.select({ 
+      count: count() 
+    }).from(disposableItems).where(
+      and(
+        eq(disposableItems.userId, userId),
+        sql`${disposableItems.dateAdded} >= ${monthAgo}`
+      )
+    );
+    
+    const monthlyTotal = Number(monthlyResult?.count || 0);
+    
+    // Get counts by category
+    const byCategory: Record<string, number> = {};
+    
+    // Initialize all categories with 0 count
     disposableItemCategories.forEach(category => {
-      byCategory[category] = items.filter(item => item.category === category).length;
+      byCategory[category] = 0;
+    });
+    
+    // Get actual counts
+    const categoryCounts = await db.select({
+      category: disposableItems.category,
+      count: count()
+    })
+    .from(disposableItems)
+    .where(eq(disposableItems.userId, userId))
+    .groupBy(disposableItems.category);
+    
+    // Update counts
+    categoryCounts.forEach(result => {
+      byCategory[result.category] = Number(result.count);
     });
     
     return {
-      weeklyTotal: weeklyItems.length,
-      monthlyTotal: monthlyItems.length,
-      allTimeTotal: items.length,
+      weeklyTotal,
+      monthlyTotal,
+      allTimeTotal,
       byCategory: byCategory as Record<typeof disposableItemCategories[number], number>
     };
   }
 }
 
-export const storage = new MemStorage();
+// Initialize with database storage
+export const storage = new DatabaseStorage();
