@@ -30,13 +30,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    proxy: {
-      '/api': {
-        target: 'https://disposables-tracker.replit.app',
-        changeOrigin: true,
-        secure: true,
-      }
-    }
+    cors: true,
+    open: true,
+    host: true,
   }
 });
 `;
@@ -53,8 +49,8 @@ try {
 }
 
 console.log('Starting client-only mode on port 3000...');
-console.log('This will use the API from your Replit deployment');
-console.log('API requests will be proxied to https://disposables-tracker.replit.app');
+console.log('This will use mock data for API requests');
+console.log('All API requests will be intercepted and served with local data');
 
 try {
   // Start the client with the temporary config
