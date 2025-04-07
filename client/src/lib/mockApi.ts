@@ -113,5 +113,11 @@ export async function getMockStats(): Promise<UserStats> {
 // Helper to determine if we're in client-only mode
 // This is set by the define option in the Vite config
 export const isClientOnlyMode = () => {
-  return typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  // When running locally, this will determine we're in client-only mode
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return true;
+  }
+  
+  // On Replit, we're not in client-only mode
+  return false;
 }
