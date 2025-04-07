@@ -49,16 +49,34 @@ A mobile-optimized web application for tracking single-use disposable items thro
 
 ## Running Locally
 
-This project was initially built on Replit, which uses some Replit-specific features. To run it locally, use the provided local configuration files:
+This project was initially built on Replit, which uses some Replit-specific features. There are different options for running it locally:
+
+### Option 1: Run Full Stack (Client + Server)
+
+This runs both the client and server components on your local machine:
 
 1. Use `vite.config.local.ts` instead of `vite.config.ts`
 2. Use `server/vite.local.ts` instead of `server/vite.ts`
 3. Use `server/index.local.ts` instead of `server/index.ts`
 
-The easiest way to run it locally is to use the provided script:
+The easiest way to run the full stack locally is to use the provided script:
 ```
 node run-local.js
 ```
+
+### Option 2: Run Client-Only (Frontend Development)
+
+This runs only the client side locally and connects to the deployed Replit server for API requests. This is useful for frontend development:
+
+```
+node run-client-only.js
+```
+
+When using client-only mode:
+- The frontend will run on http://localhost:3000
+- API requests will be proxied to the deployed Replit app
+- You don't need to set up a local database
+- Changes to frontend code will be instantly reflected
 
 ## License
 
