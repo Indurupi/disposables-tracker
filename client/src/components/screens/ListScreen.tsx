@@ -69,19 +69,9 @@ const ListScreen: React.FC = () => {
       {/* Header */}
       <header className="bg-white p-4 shadow-sm flex justify-between items-center">
         <h1 className="text-2xl font-semibold">My Checklist</h1>
-        <div className="flex space-x-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="text-secondary"
-            onClick={() => setIsAddItemOpen(true)}
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-          <button className="text-secondary">
-            <span className="material-icons">filter_list</span>
-          </button>
-        </div>
+        <button className="text-secondary">
+          <span className="material-icons">filter_list</span>
+        </button>
       </header>
       
       {/* Add Item Form */}

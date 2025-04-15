@@ -5,16 +5,19 @@ import { Toaster } from "@/components/ui/toaster";
 import StatusBar from "@/components/layout/StatusBar";
 import TabBar from "@/components/layout/TabBar";
 import CameraFab from "@/components/layout/CameraFab";
+import AddItemFab from "@/components/layout/AddItemFab";
 import HomeScreen from "@/components/screens/HomeScreen";
 import ListScreen from "@/components/screens/ListScreen";
 import CameraScreen from "@/components/screens/CameraScreen";
 import ResultsScreen from "@/components/screens/ResultsScreen";
 import ProfileScreen from "@/components/screens/ProfileScreen";
+import AddItemForm from "@/components/forms/AddItemForm";
 
 function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [identifiedItem, setIdentifiedItem] = useState<any | null>(null);
+  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
 
   const showTab = (tabId: string) => {
     setActiveTab(tabId);
@@ -22,6 +25,10 @@ function App() {
 
   const showCamera = () => {
     setActiveTab("camera");
+  };
+  
+  const openAddItemForm = () => {
+    setIsAddItemOpen(true);
   };
 
   const handleCapture = (imageSrc: string) => {
@@ -71,8 +78,21 @@ function App() {
           {activeTab === "profile" && <ProfileScreen />}
           
           {activeTab !== "camera" && (
-            <CameraFab onClick={showCamera} />
+            <>
+              <AddItemFab onClick={openAddItemForm} />
+              <CameraFab onClick={showCamera} />
+            </>
           )}
+          
+          <AddItemForm 
+            open={isAddItemOpen} 
+            onOpenChange={setIsAddItemOpen} 
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['/api/items'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/items/recent'] });
+              queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+            }}
+          />
         </div>
         
         <TabBar activeTab={activeTab} onTabChange={showTab} />
