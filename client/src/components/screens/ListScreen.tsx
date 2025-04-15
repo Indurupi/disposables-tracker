@@ -12,9 +12,20 @@ import AddItemForm from '@/components/forms/AddItemForm';
 
 const ListScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
   
+  // Define item type
+  type Item = {
+    id: number;
+    name: string;
+    category: string;
+    imageUrl?: string;
+    dateAdded?: string;
+    count?: number;
+  };
+
   // Fetch all items or filtered by category
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [] as Item[], isLoading } = useQuery<Item[]>({
     queryKey: [selectedCategory ? `/api/items/category/${selectedCategory}` : '/api/items'],
     staleTime: 30000, // 30 seconds
   });
@@ -58,10 +69,31 @@ const ListScreen: React.FC = () => {
       {/* Header */}
       <header className="bg-white p-4 shadow-sm flex justify-between items-center">
         <h1 className="text-2xl font-semibold">My Checklist</h1>
-        <button className="text-secondary">
-          <span className="material-icons">filter_list</span>
-        </button>
+        <div className="flex space-x-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-secondary"
+            onClick={() => setIsAddItemOpen(true)}
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+          <button className="text-secondary">
+            <span className="material-icons">filter_list</span>
+          </button>
+        </div>
       </header>
+      
+      {/* Add Item Form */}
+      <AddItemForm 
+        open={isAddItemOpen} 
+        onOpenChange={setIsAddItemOpen} 
+        onSuccess={() => {
+          // Refresh queries when an item is added
+          queryClient.invalidateQueries({ queryKey: ['/api/items'] });
+          queryClient.invalidateQueries({ queryKey: [selectedCategory ? `/api/items/category/${selectedCategory}` : '/api/items'] });
+        }}
+      />
       
       {/* Category filters */}
       <div className="px-4 py-3 bg-white border-b border-neutral-light overflow-x-auto whitespace-nowrap">
@@ -107,11 +139,19 @@ const ListScreen: React.FC = () => {
           <div className="text-center py-8">
             <p className="text-neutral-medium">No items found</p>
             <p className="text-sm text-neutral-medium mt-2">
-              Take a picture of a disposable item to add it to your list
+              Take a picture of a disposable item or click the + button to add items to your list
             </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAddItemOpen(true)}
+              className="mt-4"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Item Manually
+            </Button>
           </div>
         ) : (
-          items.map((item: any) => (
+          items.map((item) => (
             <Card key={item.id} className="p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
