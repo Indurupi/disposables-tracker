@@ -5,7 +5,10 @@ import { apiRequest } from '@/lib/queryClient';
 import { disposableCategories } from '@/lib/disposablesData';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { formatDate } from '@/lib/disposablesData';
+import AddItemForm from '@/components/forms/AddItemForm';
 
 const ListScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
